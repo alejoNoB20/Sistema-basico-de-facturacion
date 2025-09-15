@@ -66,7 +66,7 @@ def register():
                 "register.html", mensajeError="Ya existe una cuenta con el mismo mail"
             )
         else:
-            nuevoUsuario = Usuario(nombre, mail, contraseña, "admin")
+            nuevoUsuario = Usuario(nombre, mail, contraseña, "usuarioAutorizado")
             nuevoUsuario.crearHash()
             db.session.add(nuevoUsuario)
             db.session.commit()
@@ -193,6 +193,19 @@ def update_product(id):
 @app.route("/invoices")
 def invoices():
     return render_template("facturas/verFacturas.html")
+
+
+@app.route("/invoices/add", methods=("GET", "POST"))
+def add_invoice():
+    if request.method == "GET":
+        return render_template("facturas/emitirFactura.html")
+    else:
+        return render_template("facturas/verFacturas.html")
+
+
+@app.route("/invoices/details/<int:id>")
+def details_invoices(id):
+    return render_template("facturas/detalleFactura.html")
 
 
 if __name__ == "__main__":

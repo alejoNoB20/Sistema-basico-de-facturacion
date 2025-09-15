@@ -15,3 +15,4 @@ class Factura(db.Model):
     )
     fecha = db.Column(db.Date(), nullable=True)
     total = db.Column(db.Numeric(), nullable=False)
+    detalles = db.relationship("DetalleFactura", backref="factura")
