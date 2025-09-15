@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Productos</title>
+  </head>
+  <body>
+    <h1>Lista de Productos</h1>
+
+    <ul>
+      {% for producto in productos %}
+      <li>
+        {{producto.id_producto}} | Descripción: {{ producto.descripcion }} -
+        Precio: ${{producto.precio}}<br />
+        Stock: {{producto.stock}}
+      </li>
+      <a href="{{ url_for('delete_product', id=producto.id_producto) }}"
+        >Eliminar</a
+      >
+      <a href="{{ url_for('update_product', id=producto.id_producto) }}"
+        >Actualizar</a
+      >
+      {% else %}
+      <li>No hay productos registrados.</li>
+      {% endfor %}
+    </ul>
+
+    <a href="{{ url_for('add_product') }}">
+      <button>Agregar Producto</button>
+    </a>
+
+    <a href="{{ url_for('dashboard') }}">
+      <button>Volver</button>
+    </a>
+  </body>
+</html>

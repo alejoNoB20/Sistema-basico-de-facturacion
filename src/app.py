@@ -1,15 +1,25 @@
-from flask import Flask, redirect, render_template, url_for, request
-from models.usuariosModel import Usuario, db
+from flask import Flask, redirect, render_template, url_for, request, session
+from models.db import db
+from models.usuariosModel import Usuario
+from models.clientesModel import Cliente
+from models.facturasModel import Factura
+from models.productosModel import Producto
 
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+app.secret_key = "contraseña_recontra_secreta_confia_en_mi"
 db.init_app(app)
 
 
 @app.route("/crearDB")
 def crearDB():
+    db.drop_all()
     db.create_all()
+    admin = Usuario("admin", "admin@admin.com", "admin", "admin")
+    admin.crearHash()
+    db.session.add(admin)
+    db.session.commit()
     return redirect(url_for("login"))
 
 
@@ -35,7 +45,10 @@ def login():
             return render_template(
                 "login.html", mensajeError="La contraseña ingresada es incorrecta"
             )
-        return redirect(url_for("dashboard", id=usuario.id_usuario))
+        session["id_usuario"] = usuario.id_usuario
+        session["nombre_usuario"] = usuario.nombre
+        session["rol_usuario"] = usuario.rol
+        return redirect(url_for("dashboard"))
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -62,28 +75,119 @@ def register():
 
 @app.route("/dashboard")
 def dashboard():
-    id = request.args.get("id", type=int)
-    usuario = db.session.query(Usuario).filter_by(id_usuario=id).first()
-    if not usuario:
-        mensajeError = "Lo sentimos, no encontramos el usuario ingresado"
-        return redirect(url_for("notFount404", mensaje=mensajeError))
-    return render_template("dashboard.html", rol=usuario.rol)
+    if not "id_usuario" in session:
+        return redirect(url_for("notFount404", url="/", msg="Volver al inicio"))
+    rol = session["rol_usuario"]
+    return render_template("dashboard.html", rol=rol)
 
 
 @app.route("/notFount404")
 def notFount404():
-    mensaje = request.args.get("mensaje", type=str)
-    return render_template("404.html", mensajeError=mensaje)
+    return render_template("404.html", url="/", msg="Volver al inicio")
 
 
 @app.route("/clients")
 def clients():
-    return render_template("clientes/verClientes.html")
+    clientes = db.session.query(Cliente).all()
+    print(clientes)
+    return render_template("clientes/verClientes.html", clientes=clientes)
+
+
+@app.route("/clients/add", methods=["GET", "POST"])
+def add():
+    if request.method == "GET":
+        return render_template("clientes/crearCliente.html")
+    else:
+        nombre = request.form["nombre"]
+        direccion = request.form["direccion"]
+        email = request.form["email"]
+        telefono = request.form["telefono"]
+        cliente = Cliente(nombre, direccion, telefono, email)
+        db.session.add(cliente)
+        db.session.commit()
+        return redirect(url_for("clients"))
+
+
+@app.route("/clients/delete/<int:id>")
+def delete(id):
+    cliente = db.session.query(Cliente).filter(Cliente.id_cliente == id)
+    if not cliente:
+        return redirect(
+            url_for("notFount404", url="clients", msg="Volver a la lista de clientes")
+        )
+    cliente.delete(synchronize_session="auto")
+    db.session.commit()
+    return redirect(url_for("clients"))
+
+
+@app.route("/clients/update/<int:id>", methods=("GET", "POST"))
+def update(id):
+    cliente = db.session.query(Cliente).filter(Cliente.id_cliente == id).first()
+    if not cliente:
+        return redirect(
+            url_for("notFount404", url="clients", msg="Volver a la lista de clientes")
+        )
+    if request.method == "GET":
+        return render_template("clientes/actualizarClientes.html", cliente=cliente)
+    else:
+        nombre = request.form["nombre"]
+        direccion = request.form["direccion"]
+        email = request.form["email"]
+        telefono = request.form["telefono"]
+        cliente.actualizarCliente(nombre, direccion, telefono, email)
+        db.session.commit()
+        return redirect(url_for("clients"))
 
 
 @app.route("/products")
 def products():
-    return render_template("productos/verProductos.html")
+    productos = db.session.query(Producto).all()
+    return render_template("productos/verProductos.html", productos=productos)
+
+
+@app.route("/products/add", methods=["GET", "POST"])
+def add_product():
+    if request.method == "GET":
+        return render_template("productos/crearProducto.html")
+    else:
+        descripcion = request.form["descripcion"]
+        precio = request.form["precio"]
+        stock = request.form["stock"]
+
+        producto = Producto(descripcion, precio, stock)
+        db.session.add(producto)
+        db.session.commit()
+        return redirect(url_for("products"))
+
+
+@app.route("/products/delete/<int:id>")
+def delete_product(id):
+    producto = db.session.query(Producto).filter(Producto.id_producto == id)
+    if not producto:
+        return redirect(
+            url_for("notFount404", url="products", msg="Volver a lista de Productos")
+        )
+    producto.delete(synchronize_session="auto")
+    db.session.commit()
+    return redirect(url_for("products"))
+
+
+@app.route("/product/update/<int:id>", methods=["GET", "POST"])
+def update_product(id):
+    producto = db.session.query(Producto).filter(Producto.id_producto == id).first()
+    if not producto:
+        return redirect(
+            url_for("notFount404", url="products", msg="Volver a lista de Productos")
+        )
+    if request.method == "GET":
+        return render_template("productos/actualizarProducto.html", producto=producto)
+    else:
+        descripcion = request.form["descripcion"]
+        precio = request.form["precio"]
+        stock = request.form["stock"]
+        producto.actualizarProducto(descripcion, precio, stock)
+        db.session.commit()
+        return redirect(url_for("products"))
 
 
 @app.route("/invoices")

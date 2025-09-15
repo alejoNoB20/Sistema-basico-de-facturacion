@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Actualizar Cliente</title>
+  </head>
+  <body>
+    <h1>Actualizar Cliente "{{cliente.nombre}}"</h1>
+
+    <form action="{{ url_for('update', id=cliente.id_cliente) }}" method="POST">
+      <label for="nombre">Nombre:</label><br />
+      <input
+        type="text"
+        id="nombre"
+        name="nombre"
+        value="{{cliente.nombre}}"
+        required
+      /><br /><br />
+
+      <label for="direccion">Dirección:</label><br />
+      <input
+        type="text"
+        id="direccion"
+        name="direccion"
+        value="{{cliente.direccion}}"
+      /><br /><br />
+
+      <label for="telefono">Teléfono:</label><br />
+      <input
+        type="text"
+        id="telefono"
+        name="telefono"
+        value="{{cliente.telefono}}"
+      /><br /><br />
+
+      <label for="email">Email:</label><br />
+      <input
+        type="email"
+        id="email"
+        name="email"
+        value="{{cliente.email}}"
+      /><br /><br />
+
+      <button type="submit">Actualizar Cliente</button>
+    </form>
+    <a href="{{url_for('clients')}}">Volver</a>
+  </body>
+</html>

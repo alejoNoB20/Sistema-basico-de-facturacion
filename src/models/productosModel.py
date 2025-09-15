@@ -1,19 +1,20 @@
-from flask_sqlalchemy import SQLAlchemy
+from models.db import db
 
-db = SQLAlchemy()
 
 class Producto(db.Model):
-    __tablename__ = "prodcuto"
+    __tablename__ = "producto"
 
-    def __init__ (self, id_producto, descripcion, precio, stock):
-        self.id_producto = id_producto
+    def __init__(self, descripcion, precio, stock):
         self.descripcion = descripcion
         self.precio = precio
         self.stock = stock
 
-    id_usuario = db.Column(db.Integer, primary_key=True, allownull=False)
-    nombre = db.Column(db.String(50), allownull=False)
-    email = db.Column(db.String(100), allownull=True)
-    password = db.Column(db.string(50), allownull=False)
-    rol = db.Column(db.String(50), allownull=False)
+    id_producto = db.Column(db.Integer(), primary_key=True, nullable=False)
+    descripcion = db.Column(db.String(100), nullable=False)
+    precio = db.Column(db.Float(), nullable=False)
+    stock = db.Column(db.Integer(), nullable=False)
 
+    def actualizarProducto(self, descripcion, precio, stock):
+        self.descripcion = descripcion
+        self.precio = precio
+        self.stock = stock

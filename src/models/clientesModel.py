@@ -1,21 +1,25 @@
-from flask_sqlalchemy import SQLAlchemy
+from models.db import db
 
-db = SQLAlchemy()
 
 class Cliente(db.Model):
     __tablename__ = "cliente"
 
-    def __init__ (self, id_cliente, nombre, direccion, telefono, mail):
-        self.id_cliente = id_cliente
+    def __init__(self, nombre, direccion, telefono, email):
         self.nombre = nombre
         self.direccion = direccion
-        self.direccion = telefono
-        self.mail = mail
+        self.telefono = telefono
+        self.email = email
 
-    id_cliente = db.Column(db.Integer, primary_key=True, allownull=False)
-    nombre = db.Column(db.String(50), allownull=False)
-    email = db.Column(db.String(100), allownull=True)
-    password = db.Column(db.string(50), allownull=False)
-    rol = db.Column(db.String(50), allownull=False)
-    factura = db.relationship('factura', backref='usuario', lazy=True)
+    id_cliente = db.Column(db.Integer(), primary_key=True, nullable=False)
+    nombre = db.Column(db.String(50), nullable=False)
+    direccion = db.Column(db.String(100), nullable=True)
+    telefono = db.Column(db.Integer(), nullable=False)
+    email = db.Column(db.String(100), nullable=True)
+    factura = db.relationship("Factura", backref="cliente", lazy=True)
 
+    def actualizarCliente(self, nombre, direccion, telefono, email) -> bool:
+        self.nombre = nombre
+        self.direccion = direccion
+        self.telefono = telefono
+        self.email = email
+        return True

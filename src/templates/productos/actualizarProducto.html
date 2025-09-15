@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Actualizar Producto</title>
+  </head>
+  <body>
+    <h1>Actualizar Producto "{{producto.descripcion}}"</h1>
+
+    <form
+      action="{{ url_for('update_product', id=producto.id_producto) }}"
+      method="POST"
+    >
+      <label for="nombre">Descripcion:</label><br />
+      <input
+        type="text"
+        id="descripcion"
+        name="descripcion"
+        value="{{producto.descripcion}}"
+        required
+      /><br /><br />
+
+      <label for="direccion">Precio:</label><br />
+      <input
+        type="number"
+        id="precio"
+        name="precio"
+        value="{{producto.precio}}"
+      /><br /><br />
+
+      <label for="telefono">Stock:</label><br />
+      <input
+        type="number"
+        id="stock"
+        name="stock"
+        value="{{producto.stock}}"
+      /><br /><br />
+
+      <button type="submit">Actualizar Producto</button>
+    </form>
+    <a href="{{url_for('products')}}">Volver</a>
+  </body>
+</html>
