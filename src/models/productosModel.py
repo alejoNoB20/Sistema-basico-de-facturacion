@@ -1,4 +1,5 @@
 from models.db import db
+from models.detalleFacturaModel import DetalleFactura
 
 
 class Producto(db.Model):
@@ -13,7 +14,7 @@ class Producto(db.Model):
     descripcion = db.Column(db.String(100), nullable=False)
     precio = db.Column(db.Float(), nullable=False)
     stock = db.Column(db.Integer(), nullable=False)
-    detalles = db.relationship("DetalleFactura", backref="producto")
+    detalles = db.relationship(DetalleFactura, backref="producto")
 
     def actualizarProducto(self, descripcion, precio, stock):
         self.descripcion = descripcion

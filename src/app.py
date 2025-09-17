@@ -195,12 +195,37 @@ def invoices():
     return render_template("facturas/verFacturas.html")
 
 
-@app.route("/invoices/add", methods=("GET", "POST"))
+@app.route("/invoice/add")
 def add_invoice():
-    if request.method == "GET":
-        return render_template("facturas/emitirFactura.html")
-    else:
-        return render_template("facturas/verFacturas.html")
+    print("ENTRA ACA")
+    clientes = db.session.query(Cliente).all()
+    productos = db.session.query(Producto).all()
+    return render_template(
+        "facturas/emitirFactura.html",
+        clientes=clientes,
+        productos=productos,
+    )
+
+
+@app.route("/invoices/add_product")
+def add_invoice_product():
+    lista = []
+    producto = request.form["producto"]
+    cantidad = request.form["cantidad"]
+    lista.append({producto: producto, cantidad: cantidad})
+    clientes = db.session.query(Cliente).all()
+    productos = db.session.query(Producto).all()
+    return render_template(
+        "facturas/emitirFactura.html",
+        clientes=clientes,
+        productos=productos,
+        lista=lista,
+    )
+
+
+@app.route("/invoices/create")
+def create_invoice():
+    return redirect(url_for("invoices"))
 
 
 @app.route("/invoices/details/<int:id>")

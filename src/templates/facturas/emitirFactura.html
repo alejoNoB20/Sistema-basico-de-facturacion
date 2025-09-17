@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Usuarios y Productos</title>
+  </head>
+  <body>
+    <h1>Usuarios Registrados</h1>
+    <select name="cliente" id="cliente">
+      <option value="default">Seleccionar cliente...</option>
+      {% for cliente in clientes %}
+      <option value="cliente.id_cliente">
+        {{cliente.id_cliente}} | {{cliente.nombre}}
+      </option>
+      {% endfor %}
+    </select>
+
+    <h1>Productos</h1>
+    <form action="{{url_for('add_invoice_product')}}" method="POST">
+      <select name="producto" id="producto">
+        <option value="default">Seleccionar producto...</option>
+        {% for producto in productos %}
+        <option value="producto.id_producto">
+          {{producto.id_producto}} | {{producto.descripcion}}
+        </option>
+        {% endfor %}
+      </select>
+      <label for="cantidad">Cantidad: </label>
+      <input type="number" name="cantidad" id="cantidad" />
+      <button type="submit">Agregar</button>
+    </form>
+
+    <ul>
+      {% for seleccion in lista %}
+      <li>{{ seleccion.producto }} - {{ seleccion.cantidad }}</li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>

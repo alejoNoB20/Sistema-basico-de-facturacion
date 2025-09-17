@@ -10,23 +10,20 @@
     <ul>
       {% for factura in facturas %}
       <li>
-        {{factura.id_factura}} | Cliente: {{ producto.descripcion }} - Precio:
-        ${{producto.precio}}<br />
-        Stock: {{producto.stock}}
+        {{factura.id_factura}} | Cliente: "ACA VA EL NOMBRE"<br />
+        Fecha: {{factura.fecha}}<br />
+        Importe Total: ${{factura.total}}
       </li>
-      <a href="{{ url_for('delete_product', id=producto.id_producto) }}"
-        >Eliminar</a
-      >
-      <a href="{{ url_for('update_product', id=producto.id_producto) }}"
-        >Actualizar</a
+      <a href="{{ url_for('details_invoice', id=factura.id_factura) }}"
+        >Detalles</a
       >
       {% else %}
-      <li>No hay productos registrados.</li>
+      <li>No hay facturas registradas.</li>
       {% endfor %}
     </ul>
 
-    <a href="{{ url_for('add_product') }}">
-      <button>Agregar Producto</button>
+    <a href="{{ url_for('add_invoice') }}">
+      <button>Generar factura</button>
     </a>
 
     <a href="{{ url_for('dashboard') }}">
