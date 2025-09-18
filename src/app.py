@@ -197,22 +197,7 @@ def invoices():
 
 @app.route("/invoice/add")
 def add_invoice():
-    print("ENTRA ACA")
-    clientes = db.session.query(Cliente).all()
-    productos = db.session.query(Producto).all()
-    return render_template(
-        "facturas/emitirFactura.html",
-        clientes=clientes,
-        productos=productos,
-    )
-
-
-@app.route("/invoices/add_product")
-def add_invoice_product():
     lista = []
-    producto = request.form["producto"]
-    cantidad = request.form["cantidad"]
-    lista.append({producto: producto, cantidad: cantidad})
     clientes = db.session.query(Cliente).all()
     productos = db.session.query(Producto).all()
     return render_template(
@@ -223,9 +208,48 @@ def add_invoice_product():
     )
 
 
+@app.route("/invoices/add_product", methods=["POST", "GET"])
+def add_invoice_product():
+    if "lista" not in session:
+        session["lista"] = []
+    if request.method == "GET":
+        clientes = db.session.query(Cliente).all()
+        productos = db.session.query(Producto).all()
+        lista = session.get("lista", [])
+        return render_template(
+            "facturas/emitirFactura.html",
+            clientes=clientes,
+            productos=productos,
+            lista=lista,
+        )
+    else:
+        id_producto = request.form["producto"]
+        producto = (
+            db.session.query(Producto)
+            .filter(Producto.id_producto == id_producto)
+            .first()
+        )
+        cantidad = request.form["cantidad"]
+        session["lista"].append(
+            {
+                "id_producto": id_producto,
+                "descripcion": producto.descripcion,
+                "cantidad": cantidad,
+            }
+        )
+        session.modified = True
+        return redirect(url_for("add_invoice_product"))
+
+
 @app.route("/invoices/create")
 def create_invoice():
     return redirect(url_for("invoices"))
+
+
+@app.route("/invoice/cancel")
+def cancel_invoice():
+    session.pop("list", None)
+    return redirect(url_for("dashboard"))
 
 
 @app.route("/invoices/details/<int:id>")
