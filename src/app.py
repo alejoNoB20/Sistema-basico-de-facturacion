@@ -1,9 +1,11 @@
-from flask import Flask, redirect, render_template, url_for, request, session
+from flask import Flask, redirect, render_template, url_for, request, session, flash
 from models.db import db
+from datetime import datetime
 from models.usuariosModel import Usuario
 from models.clientesModel import Cliente
 from models.facturasModel import Factura
 from models.productosModel import Producto
+from models.detalleFacturaModel import DetalleFactura
 
 
 app = Flask(__name__)
@@ -49,6 +51,12 @@ def login():
         session["nombre_usuario"] = usuario.nombre
         session["rol_usuario"] = usuario.rol
         return redirect(url_for("dashboard"))
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -151,7 +159,7 @@ def add_product():
         return render_template("productos/crearProducto.html")
     else:
         descripcion = request.form["descripcion"]
-        precio = request.form["precio"]
+        p   recio = request.form["precio"]
         stock = request.form["stock"]
 
         producto = Producto(descripcion, precio, stock)
@@ -192,12 +200,23 @@ def update_product(id):
 
 @app.route("/invoices")
 def invoices():
-    return render_template("facturas/verFacturas.html")
+    facturas = db.session.query(Factura).all()
+    nombres = []
+    for factura in facturas:
+        cliente = (
+            db.session.query(Cliente)
+            .filter(Cliente.id_cliente == factura.id_cliente)
+            .first()
+        )
+        nombres.append(cliente.nombre)
+    return render_template(
+        "facturas/verFacturas.html", facturas=facturas, nombres=nombres
+    )
 
 
 @app.route("/invoice/add")
 def add_invoice():
-    lista = []
+    lista = session.get("lista", [])
     clientes = db.session.query(Cliente).all()
     productos = db.session.query(Producto).all()
     return render_template(
@@ -212,17 +231,29 @@ def add_invoice():
 def add_invoice_product():
     if "lista" not in session:
         session["lista"] = []
+    if "cliente" not in session:
+        session["cliente"] = {
+            "id_cliente": "default",
+            "nombre": "Seleccionar un cliente...",
+        }
     if request.method == "GET":
         clientes = db.session.query(Cliente).all()
         productos = db.session.query(Producto).all()
-        lista = session.get("lista", [])
+        lista = session.get("lista")
+        cliente = session.get("cliente")
         return render_template(
             "facturas/emitirFactura.html",
             clientes=clientes,
             productos=productos,
             lista=lista,
+            cliente=cliente,
         )
     else:
+        id_cliente = request.form["cliente"]
+        cliente = (
+            db.session.query(Cliente).filter(Cliente.id_cliente == id_cliente).first()
+        )
+        session["cliente"] = {"id_cliente": int(id_cliente), "nombre": cliente.nombre}
         id_producto = request.form["producto"]
         producto = (
             db.session.query(Producto)
@@ -241,20 +272,95 @@ def add_invoice_product():
         return redirect(url_for("add_invoice_product"))
 
 
+@app.route("/invoices/delete_product/<int:index>", methods=["POST"])
+def delete_invoice_product(index):
+    session["lista"].pop(index)
+    session.modified = True
+    return redirect(url_for("add_invoice_product"))
+
+
 @app.route("/invoices/create")
 def create_invoice():
+    lista = session.get("lista", [])
+    cliente = session.get("cliente", {})
+    if not lista or not cliente:
+        flash(
+            "La factura debe contar con el cliente y al menos un producto vendido",
+            "warning",
+        )
+        return redirect(url_for("add_invoice_product"))
+
+    total = 0
+    factura = Factura(cliente["id_cliente"], datetime.now(), total)
+    db.session.add(factura)
+    db.session.commit()
+
+    for producto in lista:
+        datos_producto = (
+            db.session.query(Producto)
+            .filter(Producto.id_producto == producto["id_producto"])
+            .first()
+        )
+
+        if datos_producto.stock < int(producto["cantidad"]):
+            db.session.query(Factura).filter(
+                Factura.id_factura == factura.id_factura
+            ).delete()
+            db.session.commit()
+            flash(
+                f'No pudimos generar la factura porque el producto "{datos_producto.descripcion}" solo cuenta con un stock de {datos_producto.stock}',
+                "danger",
+            )
+            return redirect(url_for("add_invoice_product"))
+
+        datos_producto.stock -= int(producto["cantidad"])
+        subtotal = round(datos_producto.precio * int(producto["cantidad"]), 2)
+        total += subtotal
+
+        detalle = DetalleFactura(
+            factura.id_factura,
+            datos_producto.id_producto,
+            producto["cantidad"],
+            datos_producto.precio,
+            subtotal,
+        )
+        db.session.add(detalle)
+        db.session.commit()
+
+    factura.total = total
+    db.session.commit()
+    session.pop("lista", None)
     return redirect(url_for("invoices"))
 
 
 @app.route("/invoice/cancel")
 def cancel_invoice():
-    session.pop("list", None)
+    session.pop("cliente", None)
+    session.pop("lista", None)
     return redirect(url_for("dashboard"))
 
 
 @app.route("/invoices/details/<int:id>")
 def details_invoices(id):
-    return render_template("facturas/detalleFactura.html")
+    factura = (
+        db.session.query(Factura)
+        .filter(Factura.id_factura == id)
+        .join(DetalleFactura)
+        .join(Producto)
+        .first()
+    )
+    cliente = (
+        db.session.query(Cliente)
+        .filter(Cliente.id_cliente == factura.id_cliente)
+        .first()
+    )
+
+    return render_template(
+        "facturas/detalleFactura.html",
+        factura=factura,
+        cliente=cliente,
+        detalles=factura.detalles,
+    )
 
 
 if __name__ == "__main__":
